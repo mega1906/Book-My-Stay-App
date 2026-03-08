@@ -1,11 +1,10 @@
 # Book-My-Stay-App
 
-### Use Case 1: Room Inventory
+### Use Case 2: Room Search & Availability
 
-A simple Java program for managing hotel room inventory using HashMaps.
+Adds **read-only search** on top of UC1:
+- Show available room types (count > 0)
+- View price and amenities for a room type
+- Defensive checks (room type existence)
+- Search layer does **not** modify inventory
 
-## Features
-- Add or update room types  
-- Change room count or price  
-- View all room inventory  
-- Uses Scanner for user input  
