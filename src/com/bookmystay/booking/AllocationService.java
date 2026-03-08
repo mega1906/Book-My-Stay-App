@@ -60,6 +60,19 @@ public class AllocationService {
         }
     }
 
+
+    public List<Reservation> getConfirmed() {
+        return new ArrayList<>(confirmed);
+    }
+
+    public Reservation findByRoomId(String roomId) {
+        if (roomId == null || roomId.isEmpty()) return null;
+        for (Reservation r : confirmed) {
+            if (roomId.equalsIgnoreCase(r.getAllocatedRoomId())) return r;
+        }
+        return null;
+    }
+
     private String makeRoomId(String displayType, int seq) {
         String shortType = displayType.replaceAll("\\s+", "").toUpperCase();
         return shortType + "-" + String.format("%03d", seq);

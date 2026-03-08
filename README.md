@@ -1,10 +1,13 @@
 # Book-My-Stay-App
 
-### Use Case 4: Reservation Confirmation & Room Allocation
+### Use Case 5: Add‑On Service Selection
 
-Adds confirmation + unique room allocation:
-- FIFO: process next/all from queue
-- Unique room IDs per type (e.g., SINGLE-001)
-- Immediate inventory decrement
-- No double-booking (IDs stored in a set)
-- View assigned rooms
+Adds service management on top of confirmed bookings:
+- Map: reservation Room ID → List<Service>
+- Attach multiple services (Breakfast, Spa, Airport Pickup)
+- View services and total extra cost
+
+## How to use
+- Confirm a booking (5 → 6) to get a Room ID (e.g., `SINGLE-001`)
+- Use 9 to add a service to that Room ID
+- Use 10 to view its services and total cost
