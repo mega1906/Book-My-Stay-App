@@ -17,6 +17,8 @@ public class BookingQueueService {
         return queue.poll(); // deque or null
     }
 
+    public Reservation peek() { return queue.peek(); }
+
     public List<Reservation> getSnapshot() {
         return List.copyOf(queue);
     }

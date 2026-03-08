@@ -3,6 +3,7 @@ package com.bookmystay.app;
 import java.util.List;
 import java.util.Scanner;
 
+import com.bookmystay.booking.AllocationService;
 import com.bookmystay.booking.BookingQueueService;
 import com.bookmystay.booking.Reservation;
 import com.bookmystay.inventory.InventoryService;
@@ -12,141 +13,119 @@ import com.bookmystay.search.SearchService;
  * BookMyStayApp
  * Main entry point for the application. Delegates to the Menu system.
  * @author Developer
- * @version 3.0
+ * @version 4.0
  */
 public class BookMyStayApp {
 
     public static void main(String[] args) {
-    	// Scanner to take input from user in the console
         Scanner sc = new Scanner(System.in);
 
         InventoryService inventory = new InventoryService();
         inventory.initializeDefaultRooms();
 
-        SearchService searchService = new SearchService(inventory);
-        BookingQueueService bookingService = new BookingQueueService();
+        SearchService search = new SearchService(inventory);
+        BookingQueueService bookingQueue = new BookingQueueService();
+        AllocationService allocation = new AllocationService();
 
-        System.out.println("===== BookMyStay =====");
+        // Simulation
+        if (args != null) {
+            for (String a : args) {
+                if ("simulate".equalsIgnoreCase(a)) {
+                    devSimulate(bookingQueue, inventory);
+                }
+            }
+        }
 
         boolean running = true;
-        
-        // Loop 
+        // Loop
         while (running) {
             System.out.println("\nChoose an option:");
-            System.out.println("1. Show Inventory");
-            System.out.println("2. Add/Update Room Type");
-            System.out.println("3. Update Room Count");
-            System.out.println("4. Update Room Price");
-            System.out.println("5. Show Available Room Types");
-            System.out.println("6. View Room Details");
-            System.out.println("7. Simulate Booking Requests");
-            System.out.println("8. Exit");
+            System.out.println("1. View Room Inventory");
+            System.out.println("2. Update Room Count");
+            System.out.println("3. Update Room Price");
+            System.out.println("4. Search Available Rooms");
+            System.out.println("5. Add Booking Request");
+            System.out.println("6. Process Next Booking");
+            System.out.println("7. View Booking Queue");
+            System.out.println("8. View Confirmed Reservations");
+            System.out.println("9. Exit");
             System.out.print("Enter choice: ");
             int choice = safeReadInt(sc);
 
             switch (choice) {
-                case 1 -> inventory.showInventory();
-
-                case 2 -> {
-                    System.out.print("Enter room type: ");
-                    String type = sc.nextLine().trim();
-                    System.out.print("Enter count (required): ");
-                    int count = safeReadInt(sc);
-
-                    System.out.print("Enter price (optional, Enter to keep): ");
-                    String priceStr = sc.nextLine().trim();
-                    Double price = priceStr.isEmpty() ? null : safeParseDouble(priceStr);
-
-                    System.out.print("Enter amenities (comma separated, optional, Enter to keep): ");
-                    String amenitiesCsv = sc.nextLine();
-                    boolean amenitiesProvided = !amenitiesCsv.trim().isEmpty();
-
-                    inventory.upsertRoomType(type, count, price, amenitiesProvided ? amenitiesCsv : null);
-                    System.out.println("Done.");
+                case 1: {
+                    inventory.showInventory();
+                    break;
                 }
-
-                case 3 -> {
+                case 2: {
                     System.out.print("Enter room type: ");
                     String type = sc.nextLine().trim();
                     System.out.print("Enter new count: ");
                     int newCount = safeReadInt(sc);
                     inventory.updateRoomCount(type, newCount);
+                    break;
                 }
-
-                case 4 -> {
+                case 3: {
                     System.out.print("Enter room type: ");
                     String type = sc.nextLine().trim();
                     System.out.print("Enter new price: ");
                     double newPrice = safeReadDouble(sc);
                     inventory.updateRoomPrice(type, newPrice);
+                    break;
                 }
-
-                case 5 -> {
-                    System.out.println("\nAvailable room types:");
-                    List<String> available = searchService.getAvailableRoomTypes();
-                    if (available.isEmpty()) System.out.println("(none)");
-                    else available.forEach(rt -> System.out.println("- " + rt));
-                }
-
-                case 6 -> {
-                    System.out.println("\nAvailable room types:");
-                    List<String> available = searchService.getAvailableRoomTypes();
-                    if (available.isEmpty()) System.out.println("(none)");
-                    else available.forEach(rt -> System.out.println("- " + rt));
-
-                    System.out.print("Enter room type to view details: ");
-                    String type = sc.nextLine().trim();
-
-                    if (!searchService.exists(type)) {
-                        System.out.println("Not found.");
-                    } else {
-                        int count = searchService.getAvailableCount(type);
-                        double price = searchService.getPrice(type);
-                        List<String> amenities = searchService.getAmenities(type);
-
-                        System.out.println("\nRoom Type: " + inventory.getDisplayName(type));
-                        System.out.println("Available: " + count);
-                        System.out.println("Price: " + price);
-                        System.out.println("Amenities: " + (amenities.isEmpty() ? "-" : String.join(", ", amenities)));
-                    }
-                }
-
-                case 7 -> {
-                    System.out.println("\nAvailable room types:");
-                    List<String> available = searchService.getAvailableRoomTypes();
+                case 4: {
+                    List<String> available = search.getAvailableRoomTypes();
                     if (available.isEmpty()) {
-                        System.out.println("(none) — cannot simulate bookings.");
-                        break;
+                        System.out.println("(no rooms available)");
                     } else {
-                        available.forEach(rt -> System.out.println("- " + rt));
+                        System.out.println("Available rooms:");
+                        for (String rt : available) {
+                            int c = search.getAvailableCount(rt);
+                            double p = search.getPrice(rt);
+                            System.out.println("- " + rt + " | Count: " + c + " | Price: " + p);
+                        }
                     }
-
-                    System.out.print("Enter room type to request: ");
+                    break;
+                }
+                case 5: {
+                    System.out.print("Guest name: ");
+                    String guest = sc.nextLine().trim();
+                    System.out.println("Available room types:");
+                    List<String> avail = search.getAvailableRoomTypes();
+                    if (avail.isEmpty()) {
+                        System.out.println("(none)");
+                        break;
+                    }
+                    for (String rt : avail) System.out.println("- " + rt);
+                    System.out.print("Enter room type: ");
                     String roomType = sc.nextLine().trim();
-
-                    // Simulation
-                    try {
-                        bookingService.addRequest(new Reservation("Rohan (Guest 1)", inventory.getDisplayName(roomType)));
-                        Thread.sleep(1000);
-
-                        bookingService.addRequest(new Reservation("Mia (Guest 2)", inventory.getDisplayName(roomType)));
-                        Thread.sleep(1000);
-
-                        bookingService.addRequest(new Reservation("Zara (Guest 3)", inventory.getDisplayName(roomType)));
-                        Thread.sleep(1000);
-
-                    } catch (InterruptedException ignored) {}
-
-                    System.out.println("\nQueue (first-in-first-out):");
-                    bookingService.printQueue();
+                    if (!search.exists(roomType)) {
+                        System.out.println("Not found.");
+                        break;
+                    }
+                    bookingQueue.addRequest(new Reservation(guest, inventory.getDisplayName(roomType)));
+                    break;
                 }
-
-                case 8 -> {
+                case 6: {
+                    Reservation confirmed = allocation.processNext(bookingQueue, inventory);
+                    if (confirmed == null) System.out.println("Nothing processed.");
+                    break;
+                }
+                case 7: {
+                    bookingQueue.printQueue();
+                    break;
+                }
+                case 8: {
+                    allocation.printConfirmed();
+                    break;
+                }
+                case 9: {
                     running = false;
-                    System.out.println("Goodbye!");
+                    break;
                 }
-
-                default -> System.out.println("Invalid choice.");
+                default: {
+                    System.out.println("Invalid choice.");
+                }
             }
         }
     }
@@ -154,21 +133,37 @@ public class BookMyStayApp {
     private static int safeReadInt(Scanner sc) {
         while (true) {
             String line = sc.nextLine().trim();
-            try { return Integer.parseInt(line); }
-            catch (NumberFormatException e) { System.out.print("Enter a number: "); }
+            try {
+                return Integer.parseInt(line);
+            } catch (NumberFormatException e) {
+                System.out.print("Enter a number: ");
+            }
         }
     }
 
     private static double safeReadDouble(Scanner sc) {
         while (true) {
             String line = sc.nextLine().trim();
-            try { return Double.parseDouble(line); }
-            catch (NumberFormatException e) { System.out.print("Enter a number (e.g., 129.99): "); }
+            try {
+                return Double.parseDouble(line);
+            } catch (NumberFormatException e) {
+                System.out.print("Enter a number (e.g., 129.99): ");
+            }
         }
     }
 
-    private static double safeParseDouble(String s) {
-        try { return Double.parseDouble(s.trim()); }
-        catch (Exception e) { return 0.0; }  // fallback, though we only call this when non-empty; guarded earlier
+    // Enqueuing requests
+    private static void devSimulate(BookingQueueService bookingQueue, InventoryService inventory) {
+        java.util.List<String> avail = inventory.getAvailableRoomTypes();
+        if (avail.isEmpty()) return;
+        String pick = avail.get(0);
+        try {
+            bookingQueue.addRequest(new Reservation("Rohan (Guest 1)", pick));
+            Thread.sleep(1000);
+            bookingQueue.addRequest(new Reservation("Mia (Guest 2)", pick));
+            Thread.sleep(1000);
+            bookingQueue.addRequest(new Reservation("Zara (Guest 3)", pick));
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {}
     }
 }

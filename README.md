@@ -1,13 +1,10 @@
 # Book-My-Stay-App
 
-### Use Case 3: Booking Request (First-Come-First-Served)
+### Use Case 4: Reservation Confirmation & Room Allocation
 
-FIFO booking requests with a simple queue and a 3-guest simulation.
-
-## Features
-- Case-insensitive room types
-- Add/update room types (price/amenities optional)
-- View inventory and available room types
-- Read-only room details lookup
-- Enqueue booking requests (FIFO)
-- Simulation: Rohan, Mia, Zara enqueued 1s apart
+Adds confirmation + unique room allocation:
+- FIFO: process next/all from queue
+- Unique room IDs per type (e.g., SINGLE-001)
+- Immediate inventory decrement
+- No double-booking (IDs stored in a set)
+- View assigned rooms
