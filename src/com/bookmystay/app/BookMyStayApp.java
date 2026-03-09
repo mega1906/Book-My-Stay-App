@@ -11,12 +11,13 @@ import com.bookmystay.booking.BookingQueueService;
 import com.bookmystay.booking.Reservation;
 import com.bookmystay.inventory.InventoryService;
 import com.bookmystay.search.SearchService;
+import com.bookmystay.history.BookingHistoryService;
 
 /**
  * BookMyStayApp
  * Main entry point for the application. Delegates to the Menu system.
  * @author Developer
- * @version 5.0
+ * @version 6.0
  */
 public class BookMyStayApp {
 
@@ -30,6 +31,7 @@ public class BookMyStayApp {
 		BookingQueueService bookingQueue = new BookingQueueService();
 		AllocationService allocation = new AllocationService();
 		ServiceManager serviceManager = new ServiceManager();
+		BookingHistoryService history = new BookingHistoryService();
 
 		// Simulation
 		if (args != null) {
@@ -54,7 +56,8 @@ public class BookMyStayApp {
 			System.out.println("8. View Confirmed Reservations");
 			System.out.println("9. Add Service to Reservation");
 			System.out.println("10. View Reservation Services");
-			System.out.println("11. Exit");
+			System.out.println("11. View Booking History Report");
+			System.out.println("12. Exit");
 
 			System.out.print("Enter choice: ");
 			int choice = safeReadInt(sc);
@@ -171,10 +174,44 @@ public class BookMyStayApp {
 				}
 				break;
 			}
-			case 11: {
+
+			case 11: { // history report + optional cancellation
+				List<Reservation> all = history.getAll();
+				long canceled = all.stream().filter(r -> "CANCELED".equalsIgnoreCase(r.getStatus())).count();
+				long confirmedCount = all.stream().filter(r -> "CONFIRMED".equalsIgnoreCase(r.getStatus())).count();
+
+				System.out.println("\n=== Booking History Report ===");
+				System.out.println("Total in history : " + all.size());
+				System.out.println("Confirmed        : " + confirmedCount);
+				System.out.println("Canceled         : " + canceled);
+				System.out.println("\nRecent items:");
+				if (all.isEmpty()) {
+					System.out.println("(empty)");
+				} else {
+					for (Reservation r : all) {
+						System.out.println("- " + r.getAllocatedRoomId() + " | " + r.getGuestName() + " | " + r.getRoomType()
+						+ " | " + r.getStatus());
+					}
+				}
+
+				System.out.print("\nEnter Room ID to cancel (Enter to skip): ");
+				String toCancel = sc.nextLine().trim();
+				if (!toCancel.isEmpty()) {
+					Reservation canceledRes = allocation.cancelReservation(toCancel, inventory);
+					if (canceledRes != null) {
+						history.recordCancellation(canceledRes);
+						System.out.println("Canceled: " + toCancel);
+					} else {
+						System.out.println("Unable to cancel. Check Room ID.");
+					}
+				}
+				break;
+			}
+			case 12: {
 				running = false;
 				break;
 			}
+
 			default: {
 				System.out.println("Invalid choice.");
 			}

@@ -50,6 +50,29 @@ public class AllocationService {
         return r;
     }
 
+
+public Reservation cancelReservation(String roomId, InventoryService inventory) {
+        if (roomId == null || roomId.isBlank()) return null;
+        Reservation target = null;
+        for (Reservation r : new ArrayList<>(confirmed)) {
+            if (roomId.equalsIgnoreCase(r.getAllocatedRoomId())) {
+                target = r; break;
+            }
+        }
+        if (target == null) return null;
+
+        int available = inventory.getAvailableCount(target.getRoomType());
+        inventory.updateRoomCount(target.getRoomType(), available + 1);
+
+        target.setStatus("CANCELED");
+        target.setConfirmed(false);
+        target.setCanceledAt(System.currentTimeMillis());
+
+        confirmed.remove(target);
+        // bookedRoomIds not freed to avoid ID reuse; assignedByType left as-is for audit display
+        return target;
+    }
+
     public void printConfirmed() {
         if (confirmed.isEmpty()) {
             System.out.println("(no confirmed reservations)");

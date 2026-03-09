@@ -9,6 +9,9 @@ public class Reservation {
 	private boolean confirmed = false;
 	private String allocatedRoomId;
 
+	private String status = "PENDING";      // PENDING, CONFIRMED, CANCELED
+	private Long confirmedAt = null;
+	private Long canceledAt = null;
 
 	public Reservation(String guestName, String roomType) {
 		this.guestName = guestName;
@@ -27,6 +30,14 @@ public class Reservation {
 
 	public void setConfirmed(boolean confirmed) { this.confirmed = confirmed; }
 	public void setAllocatedRoomId(String allocatedRoomId) { this.allocatedRoomId = allocatedRoomId; }
+
+
+	public String getStatus() { return status; }
+	public void setStatus(String status) { this.status = status; }
+	public Long getConfirmedAt() { return confirmedAt; }
+	public void setConfirmedAt(Long confirmedAt) { this.confirmedAt = confirmedAt; }
+	public Long getCanceledAt() { return canceledAt; }
+	public void setCanceledAt(Long canceledAt) { this.canceledAt = canceledAt; }
 
 
 	@Override
